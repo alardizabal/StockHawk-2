@@ -8,6 +8,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.google.android.gms.gcm.TaskParams;
+import com.sam_chordas.android.stockhawk.R;
 
 /**
  * Created by sam_chordas on 10/1/15.
@@ -41,7 +42,9 @@ public class StockIntentService extends IntentService {
       handler.post(new Runnable() {
         @Override
         public void run() {
-          Toast.makeText(getApplicationContext(), "Ticker " + ticker + " not found", Toast.LENGTH_SHORT).show();
+          String format = getResources().getString(R.string.ticker_not_found);
+          String message = String.format(format, ticker);
+          Toast.makeText(getApplicationContext(), message, Toast.LENGTH_SHORT).show();
         }
       });
     }
