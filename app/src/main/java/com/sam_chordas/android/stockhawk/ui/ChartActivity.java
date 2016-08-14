@@ -5,7 +5,6 @@ import android.graphics.Paint;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
-import android.view.View;
 import android.view.WindowManager;
 
 import com.github.mikephil.charting.charts.CandleStickChart;
@@ -27,11 +26,13 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Locale;
 
 public class ChartActivity extends AppCompatActivity {
 
   private final String LOG_TAG = getClass().getSimpleName();
+  static final String SAVED_COMPANY_NAME = "savedCompanyName";
+  static final String SAVED_TICKER = "savedTicker";
+  static final String SAVED_STOCK_DATA = "loadedStockData";
 
   private CandleStickChart chart;
 
@@ -46,9 +47,32 @@ public class ChartActivity extends AppCompatActivity {
             WindowManager.LayoutParams.FLAG_FULLSCREEN);
     setContentView(R.layout.activity_chart);
     getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+    ticker = getIntent().getStringExtra("ticker");
+    setTitle(ticker);
+    if (savedInstanceState == null) {
+      downloadData();
+    }
   }
 
-  private void loadChart() {
+  @Override
+  protected void onSaveInstanceState(Bundle outState) {
+    super.onSaveInstanceState(outState);
+    outState.putString(SAVED_COMPANY_NAME, companyName);
+    outState.putString(SAVED_TICKER, ticker);
+    outState.putParcelableArrayList(SAVED_STOCK_DATA, priceInfoArrayList);
+  }
+
+  @Override
+  protected void onRestoreInstanceState(Bundle savedInstanceState) {
+    if (savedInstanceState != null) {
+
+      companyName = savedInstanceState.getString(SAVED_COMPANY_NAME);
+      ticker = savedInstanceState.getString(SAVED_TICKER);
+      priceInfoArrayList = savedInstanceState.getParcelableArrayList(SAVED_STOCK_DATA);
+      onDownloadCompleted();
+    }
+    super.onRestoreInstanceState(savedInstanceState);
   }
 
   @Override
@@ -65,7 +89,7 @@ public class ChartActivity extends AppCompatActivity {
     OkHttpClient httpClient = new OkHttpClient();
 
     Request request = new Request.Builder()
-            .url("http://chartapi.finance.yahoo.com/instrument/1.0/" + ticker + "/chartdata;type=quote;range=1y/json")
+            .url("http://chartapi.finance.yahoo.com/instrument/1.0/" + ticker + "/chartdata;type=quote;range=3m/json")
             .build();
 
     httpClient.newCall(request).enqueue(new Callback() {
@@ -91,7 +115,7 @@ public class ChartActivity extends AppCompatActivity {
                       format(dateFormat.parse(seriesItem.getString("Date")));
 
               PriceInfo priceInfo = new PriceInfo();
-              priceInfo.setDate(date);
+              priceInfo.setDate(Float.parseFloat(seriesItem.getString("Date")));
               priceInfo.setClose(Float.parseFloat(seriesItem.getString("close")));
               priceInfo.setHigh(Float.parseFloat(seriesItem.getString("high")));
               priceInfo.setLow(Float.parseFloat(seriesItem.getString("low")));
@@ -122,11 +146,11 @@ public class ChartActivity extends AppCompatActivity {
         chart = (CandleStickChart) findViewById(R.id.chart1);
         chart.setBackgroundColor(Color.WHITE);
 
-        chart.setDescription("Ticker");
+        chart.setDescription(companyName);
 
         // if more than 60 entries are displayed in the chart, no values will be
         // drawn
-        chart.setMaxVisibleValueCount(60);
+        chart.setMaxVisibleValueCount(100);
 
         // scaling can now only be done on x- and y-axis separately
         chart.setPinchZoom(false);
@@ -135,12 +159,11 @@ public class ChartActivity extends AppCompatActivity {
 
         XAxis xAxis = chart.getXAxis();
         xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
-        xAxis.setDrawGridLines(false);
+        xAxis.setDrawGridLines(true);
 
         YAxis leftAxis = chart.getAxisLeft();
-//        leftAxis.setEnabled(false);
         leftAxis.setLabelCount(7, false);
-        leftAxis.setDrawGridLines(false);
+        leftAxis.setDrawGridLines(true);
         leftAxis.setDrawAxisLine(false);
 
         YAxis rightAxis = chart.getAxisRight();
@@ -148,15 +171,10 @@ public class ChartActivity extends AppCompatActivity {
 
         chart.resetTracking();
 
-        ArrayList<CandleEntry> yVals1 = new ArrayList<CandleEntry>();
-
-        for (PriceInfo p : priceInfoArrayList) {
-          yVals1.add(new CandleEntry(p.getDate(), p.getHigh(), p.getLow(), p.getOpen(), p.getClose()));
-        }
-
+        ArrayList<CandleEntry> yVals1 = new ArrayList<>();
         for (int i = 0; i < priceInfoArrayList.size(); i++) {
-
-          yVals1.add(new CandleEntry(i, 100, 40, 60, 80));
+          PriceInfo p = priceInfoArrayList.get(i);
+          yVals1.add(new CandleEntry(i, p.getHigh(), p.getLow(), p.getOpen(), p.getClose()));
         }
 
         CandleDataSet set1 = new CandleDataSet(yVals1, "Data Set");

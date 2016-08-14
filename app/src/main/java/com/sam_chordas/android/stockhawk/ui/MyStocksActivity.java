@@ -15,7 +15,6 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.text.InputType;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -92,7 +91,6 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
               @Override public void onItemClick(View v, int position) {
                 //TODO:
                 // do something on item click
-                Log.d(LOG_TAG, "Tapped Stock");
                 ticker = ((TextView) v.findViewById(R.id.stock_symbol)).getText().toString();
 //                Intent intent = new Intent("android.intent.action.CHART");
                 Intent intent = new Intent(getBaseContext(), ChartActivity.class);
@@ -167,7 +165,6 @@ public class MyStocksActivity extends AppCompatActivity implements LoaderManager
       GcmNetworkManager.getInstance(this).schedule(periodicTask);
     }
   }
-
 
   @Override
   public void onResume() {
